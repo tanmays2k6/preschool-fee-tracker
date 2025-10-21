@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { GraduationCap, Printer } from "lucide-react";
+import { GraduationCap, Printer, Download } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 interface FeeReceiptProps {
   payment: {
@@ -22,8 +25,59 @@ interface FeeReceiptProps {
 }
 
 export const FeeReceipt = ({ payment, onClose }: FeeReceiptProps) => {
+  const { toast } = useToast();
+
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadPDF = async () => {
+    try {
+      toast({ title: "Generating PDF...", description: "Please wait" });
+      
+      const receiptElement = document.getElementById("receipt");
+      if (!receiptElement) return;
+
+      const canvas = await html2canvas(receiptElement, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      const fileName = `receipt_${payment.student.name.replace(/\s+/g, "_")}_${payment.id.split("-")[0]}.pdf`;
+      pdf.save(fileName);
+
+      toast({ title: "PDF downloaded successfully!" });
+    } catch (error) {
+      toast({
+        title: "Error generating PDF",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -120,6 +174,10 @@ export const FeeReceipt = ({ payment, onClose }: FeeReceiptProps) => {
       <div className="flex gap-2 print:hidden">
         <Button variant="outline" onClick={onClose} className="flex-1">
           Close
+        </Button>
+        <Button onClick={handleDownloadPDF} variant="secondary" className="flex-1">
+          <Download className="h-4 w-4 mr-2" />
+          Download PDF
         </Button>
         <Button onClick={handlePrint} className="flex-1">
           <Printer className="h-4 w-4 mr-2" />
