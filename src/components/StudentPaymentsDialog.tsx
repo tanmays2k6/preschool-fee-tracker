@@ -4,6 +4,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FileText } from "lucide-react";
+import { FeeReceipt } from "./FeeReceipt";
 
 interface Payment {
   id: string;
@@ -20,6 +23,7 @@ interface StudentPaymentsDialogProps {
     name: string;
     parent_name: string;
     class: string;
+    mobile_number: string;
   } | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -28,6 +32,7 @@ interface StudentPaymentsDialogProps {
 export const StudentPaymentsDialog = ({ student, open, onOpenChange }: StudentPaymentsDialogProps) => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
 
   useEffect(() => {
     if (student && open) {
@@ -52,6 +57,32 @@ export const StudentPaymentsDialog = ({ student, open, onOpenChange }: StudentPa
   if (!student) return null;
 
   const totalPaid = payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
+
+  if (selectedPayment) {
+    return (
+      <Dialog open={open} onOpenChange={(isOpen) => {
+        if (!isOpen) {
+          setSelectedPayment(null);
+        }
+        onOpenChange(isOpen);
+      }}>
+        <DialogContent className="max-w-2xl">
+          <FeeReceipt
+            payment={{
+              ...selectedPayment,
+              student: {
+                name: student.name,
+                parent_name: student.parent_name,
+                class: student.class,
+                mobile_number: student.mobile_number,
+              },
+            }}
+            onClose={() => setSelectedPayment(null)}
+          />
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -85,6 +116,7 @@ export const StudentPaymentsDialog = ({ student, open, onOpenChange }: StudentPa
                 <TableHead>Month</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Transaction ID</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -99,6 +131,16 @@ export const StudentPaymentsDialog = ({ student, open, onOpenChange }: StudentPa
                   <TableCell>{payment.fee_month || "-"}</TableCell>
                   <TableCell className="font-semibold">₹{Number(payment.amount).toFixed(2)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{payment.transaction_id}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedPayment(payment)}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Receipt
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
