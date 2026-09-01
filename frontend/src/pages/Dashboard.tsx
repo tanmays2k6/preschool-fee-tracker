@@ -334,7 +334,11 @@ const Dashboard = () => {
         <FeesManagement onRefreshParent={handleRefresh} />
 
         {/* Student Directory Table with Class Sorting & Filtering */}
-        <StudentList key={refreshKey} onSuccess={handleRefresh} />
+        <StudentList
+          key={refreshKey}
+          onSuccess={handleRefresh}
+          onAddStudent={() => setShowAddStudent(true)}
+        />
       </main>
 
       <AddStudentDialog 
