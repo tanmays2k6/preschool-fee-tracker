@@ -3,12 +3,15 @@
   "version": "1.0.0",
   "description": "Fun N Learn Smart School - Preschool Student & Fee Management System",
   "type": "module",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
-    "dev": "concurrently \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
-    "build": "npm run build --prefix frontend",
-    "postinstall": "npm install --prefix frontend && npm install --prefix backend",
-    "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend",
-    "seed": "npm run seed --prefix backend"
+    "dev": "concurrently \"npm run dev --workspace=backend\" \"npm run dev --workspace=frontend\"",
+    "build": "npm run build --workspace=frontend",
+    "install:all": "npm install",
+    "seed": "npm run seed --workspace=backend"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",
