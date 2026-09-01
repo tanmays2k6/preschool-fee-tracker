@@ -6,7 +6,8 @@ const protect = async (req, res, next) => {
 
   if (token) {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const secret = process.env.JWT_SECRET || 'fnl_preschool_jwt_fallback_secret_key_2026';
+      const decoded = jwt.verify(token, secret);
       const user = await userService.findById(decoded.userId);
 
       if (!user) {

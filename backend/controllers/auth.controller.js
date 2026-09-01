@@ -6,26 +6,33 @@ import bcrypt from 'bcrypt';
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Please provide email and password' });
-  }
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Please provide email and password' });
+    }
 
-  const user = await userService.findByEmail(email);
+    const user = await userService.findByEmail(email);
 
-  if (user && (await bcrypt.compare(password, user.password_hash))) {
-    generateToken(res, user.id);
+    if (user && (await bcrypt.compare(password, user.password_hash))) {
+      generateToken(res, user.id);
 
-    res.json({
-      _id: user.id,
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
+      return res.json({
+        _id: user.id,
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      });
+    } else {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    return res.status(500).json({
+      message: error.message || 'Server error during login. Check database and environment variables.',
     });
-  } else {
-    res.status(401).json({ message: 'Invalid email or password' });
   }
 };
 
