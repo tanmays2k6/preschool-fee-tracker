@@ -1,0 +1,166 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* School Off-white background */
+    --background: 80 20% 99%;
+    /* School Deep Navy Foreground #2F3363 */
+    --foreground: 236 36% 28%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 236 36% 28%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 236 36% 28%;
+
+    /* School Primary: Deep Navy Blue #2F3363 (hsl: 236, 36%, 28%) */
+    --primary: 236 36% 28%;
+    --primary-foreground: 0 0% 100%;
+
+    /* School Secondary / CTA: Orange/Gold #DD8D33 (hsl: 32, 72%, 53%) */
+    --secondary: 32 72% 53%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 220 16% 96%;
+    --muted-foreground: 236 18% 48%;
+
+    /* School Accent: Bright Blue #189BC7 (hsl: 195, 78%, 44%) */
+    --accent: 195 78% 44%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 14% 90%;
+    --input: 220 14% 90%;
+    --ring: 32 72% 53%;
+
+    --radius: 0.5rem;
+    
+    /* School Green: #61A964 (hsl: 123, 30%, 52%) */
+    --success: 123 30% 52%;
+    /* School Orange: #DD8D33 (hsl: 32, 72%, 53%) */
+    --warning: 32 72% 53%;
+    
+    --gradient-primary: linear-gradient(135deg, hsl(236 36% 28%), hsl(236 36% 20%));
+    --shadow-soft: 0 2px 8px -2px hsl(236 36% 28% / 0.08);
+    --shadow-card: 0 4px 14px -2px hsl(236 36% 28% / 0.06);
+
+    --sidebar-background: 236 36% 18%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 32 72% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 236 36% 24%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 236 36% 26%;
+    --sidebar-ring: 32 72% 53%;
+  }
+
+  .dark {
+    --background: 236 36% 12%;
+    --foreground: 210 40% 98%;
+
+    --card: 236 36% 16%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 236 36% 16%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 32 72% 53%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 195 78% 44%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 236 28% 22%;
+    --muted-foreground: 215 20% 70%;
+
+    --accent: 195 78% 44%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 236 28% 25%;
+    --input: 236 28% 25%;
+    --ring: 32 72% 53%;
+    --sidebar-background: 236 36% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 32 72% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 236 36% 18%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 236 36% 20%;
+    --sidebar-ring: 32 72% 53%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Specific Clean Print Styles for 1-Page Fee Receipt */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hide everything in the app background and modals except the receipt itself */
+  body * {
+    visibility: hidden;
+  }
+
+  #fee-receipt-content,
+  #fee-receipt-content * {
+    visibility: visible;
+  }
+
+  #fee-receipt-content {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 15px 20px !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Remove dialog overlays and scroll containers from interfering with print */
+  [data-radix-portal],
+  [role="dialog"],
+  .dialog-overlay {
+    background: transparent !important;
+    position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    overflow: visible !important;
+  }
+}
+

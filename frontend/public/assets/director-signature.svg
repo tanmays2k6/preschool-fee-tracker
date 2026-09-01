@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" width="200" height="80">
+  <!-- Stylized cursive signature for Arpita -->
+  <path d="M 30 55 C 38 25, 45 15, 55 35 C 65 55, 75 58, 85 40 C 95 22, 100 48, 115 42 C 125 36, 135 50, 150 35 C 160 25, 175 30, 185 45" 
+        fill="none" stroke="#1e3a8a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M 20 62 C 60 56, 120 54, 180 50" 
+        fill="none" stroke="#1e3a8a" stroke-width="1.8" stroke-linecap="round" />
+</svg>
