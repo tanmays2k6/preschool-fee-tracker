@@ -13,6 +13,7 @@ import dashboardRoutes from './routes/dashboard.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
 import reportRoutes from './routes/report.routes.js';
 import { notFound, errorHandler } from './middleware/error.middleware.js';
+import supabase from './config/supabase.js';
 
 dotenv.config();
 
@@ -77,9 +78,44 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/reports', reportRoutes);
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', database: 'Supabase PostgreSQL', timestamp: new Date().toISOString() });
+// Health check & diagnostic endpoint
+app.get('/api/health', async (req, res) => {
+  try {
+    const hasUrl = !!process.env.SUPABASE_URL;
+    const hasKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const hasJwt = !!process.env.JWT_SECRET;
+
+    if (!hasUrl || !hasKey) {
+      return res.status(500).json({
+        status: 'error',
+        message: 'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in environment variables.',
+        envStatus: { SUPABASE_URL: hasUrl, SUPABASE_SERVICE_ROLE_KEY: hasKey, JWT_SECRET: hasJwt }
+      });
+    }
+
+    const { data: userCount, error } = await supabase.from('users').select('id', { count: 'exact', head: true });
+    
+    if (error) {
+      return res.status(500).json({
+        status: 'db_error',
+        message: error.message,
+        hint: 'Check if Supabase database tables (users table) have been created.',
+        envStatus: { SUPABASE_URL: hasUrl, SUPABASE_SERVICE_ROLE_KEY: hasKey }
+      });
+    }
+
+    res.json({
+      status: 'ok',
+      database: 'Supabase PostgreSQL connected',
+      usersFound: userCount ?? 'connected',
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: 'exception',
+      message: err.message
+    });
+  }
 });
 
 // Base API route
