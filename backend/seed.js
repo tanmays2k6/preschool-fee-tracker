@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import userService from './services/userService.js';
 import settingsService from './services/settingsService.js';
 import supabase from './config/supabase.js';

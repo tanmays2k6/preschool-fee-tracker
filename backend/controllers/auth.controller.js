@@ -1,6 +1,6 @@
 import userService from '../services/userService.js';
 import generateToken from '../utils/generateToken.js';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 // @desc    Auth user & get token
 // @route   POST /api/auth/login
