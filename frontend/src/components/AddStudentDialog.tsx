@@ -74,35 +74,35 @@ export const AddStudentDialog = ({ open, onOpenChange, onSuccess }: AddStudentDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0">
-        <div className="p-6 pb-0">
+      <DialogContent className="w-full sm:max-w-2xl max-h-[92vh] flex flex-col p-0 overflow-hidden">
+        <div className="p-4 sm:p-6 pb-2 border-b bg-muted/20">
           <DialogHeader>
-            <DialogTitle>Add New Student</DialogTitle>
-            <DialogDescription>Enter the student's details to enroll them.</DialogDescription>
+            <DialogTitle className="text-lg sm:text-xl font-bold">Add New Student</DialogTitle>
+            <DialogDescription className="text-xs">Enter the student's details to enroll them.</DialogDescription>
           </DialogHeader>
         </div>
-        <div className="flex-1 min-h-0 overflow-y-auto p-6 pt-4">
-          <form id="add-student-form" onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="admissionNumber">Admission Number *</Label>
-              <Input id="admissionNumber" value={formData.admissionNumber} onChange={handleChange} required />
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 pt-3 sm:pt-4">
+          <form id="add-student-form" onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="admissionNumber" className="text-xs font-semibold">Admission Number *</Label>
+              <Input id="admissionNumber" value={formData.admissionNumber} onChange={handleChange} required className="h-10 text-xs sm:text-sm" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="studentName">Student Name *</Label>
-              <Input id="studentName" value={formData.studentName} onChange={handleChange} required />
+            <div className="space-y-1.5">
+              <Label htmlFor="studentName" className="text-xs font-semibold">Student Name *</Label>
+              <Input id="studentName" value={formData.studentName} onChange={handleChange} required className="h-10 text-xs sm:text-sm" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="fatherName">Father's Name *</Label>
-              <Input id="fatherName" value={formData.fatherName} onChange={handleChange} required />
+            <div className="space-y-1.5">
+              <Label htmlFor="fatherName" className="text-xs font-semibold">Father's Name *</Label>
+              <Input id="fatherName" value={formData.fatherName} onChange={handleChange} required className="h-10 text-xs sm:text-sm" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="motherName">Mother's Name</Label>
-              <Input id="motherName" value={formData.motherName} onChange={handleChange} />
+            <div className="space-y-1.5">
+              <Label htmlFor="motherName" className="text-xs font-semibold">Mother's Name</Label>
+              <Input id="motherName" value={formData.motherName} onChange={handleChange} className="h-10 text-xs sm:text-sm" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="class">Class *</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="class" className="text-xs font-semibold">Class *</Label>
               <Select value={formData.class} onValueChange={handleClassChange} required>
-                <SelectTrigger id="class">
+                <SelectTrigger id="class" className="h-10 text-xs sm:text-sm font-medium">
                   <SelectValue placeholder="Select Class" />
                 </SelectTrigger>
                 <SelectContent>
@@ -114,33 +114,33 @@ export const AddStudentDialog = ({ open, onOpenChange, onSuccess }: AddStudentDi
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="admissionDate">Admission Date *</Label>
-              <Input id="admissionDate" type="date" value={formData.admissionDate} onChange={handleChange} required />
+            <div className="space-y-1.5">
+              <Label htmlFor="admissionDate" className="text-xs font-semibold">Admission Date *</Label>
+              <Input id="admissionDate" type="date" value={formData.admissionDate} onChange={handleChange} required className="h-10 text-xs sm:text-sm" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="monthlyFee">Monthly Fee (₹) *</Label>
-              <Input id="monthlyFee" type="number" value={formData.monthlyFee} onChange={handleChange} required />
+            <div className="space-y-1.5">
+              <Label htmlFor="monthlyFee" className="text-xs font-semibold">Monthly Fee (₹) *</Label>
+              <Input id="monthlyFee" type="number" inputMode="numeric" value={formData.monthlyFee} onChange={handleChange} required className="h-10 text-xs sm:text-sm font-semibold" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="annualCharges">Annual Charges (₹)</Label>
-              <Input id="annualCharges" type="number" value={formData.annualCharges} onChange={handleChange} placeholder="5000" />
+            <div className="space-y-1.5">
+              <Label htmlFor="annualCharges" className="text-xs font-semibold">Annual Charges (₹)</Label>
+              <Input id="annualCharges" type="number" inputMode="numeric" value={formData.annualCharges} onChange={handleChange} placeholder="5000" className="h-10 text-xs sm:text-sm" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="contactNumber">Contact / Phone *</Label>
-              <Input id="contactNumber" value={formData.contactNumber} onChange={handleChange} required />
+            <div className="space-y-1.5">
+              <Label htmlFor="contactNumber" className="text-xs font-semibold">Contact / Phone *</Label>
+              <Input id="contactNumber" type="tel" inputMode="tel" value={formData.contactNumber} onChange={handleChange} required className="h-10 text-xs sm:text-sm" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="address">Address *</Label>
-              <Input id="address" value={formData.address} onChange={handleChange} required />
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="address" className="text-xs font-semibold">Address *</Label>
+              <Input id="address" value={formData.address} onChange={handleChange} required className="h-10 text-xs sm:text-sm" />
             </div>
           </form>
         </div>
-        <div className="p-6 pt-3 border-t bg-background flex gap-2">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+        <div className="p-4 sm:p-6 pt-3 border-t bg-background flex gap-2 pb-safe">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1 h-11 text-xs font-semibold">
             Cancel
           </Button>
-          <Button type="submit" form="add-student-form" disabled={loading} className="flex-1">
+          <Button type="submit" form="add-student-form" disabled={loading} className="flex-1 h-11 text-xs font-bold bg-primary text-primary-foreground">
             {loading ? "Adding..." : "Add Student"}
           </Button>
         </div>

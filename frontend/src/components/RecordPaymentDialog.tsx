@@ -526,27 +526,27 @@ export const RecordPaymentDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-3xl max-h-[92vh] flex flex-col p-0 overflow-hidden">
+      <DialogContent className="w-full sm:max-w-3xl max-h-[95vh] sm:max-h-[92vh] flex flex-col p-0 overflow-hidden">
         {/* Modal Header */}
-        <div className="p-5 pb-3 border-b bg-muted/20">
+        <div className="p-4 sm:p-5 pb-3 border-b bg-muted/20">
           <DialogHeader>
-            <div className="flex justify-between items-center pr-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-6">
               <div>
-                <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                <DialogTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
                   <Calculator className="h-5 w-5 text-primary" />
                   Record Fee Payment
                 </DialogTitle>
-                <DialogDescription>
+                <DialogDescription className="text-xs">
                   Record combined multi-item or individual payments with automatic sum calculation.
                 </DialogDescription>
               </div>
-              <div className="flex bg-muted p-1 rounded-lg border text-xs">
+              <div className="flex bg-muted p-1 rounded-lg border text-xs shrink-0 self-start sm:self-auto">
                 <button
                   type="button"
                   onClick={() => setPaymentModeType("combo")}
-                  className={`px-3 py-1.5 rounded-md font-medium transition-all ${
+                  className={`px-3 py-1.5 rounded-md font-semibold transition-all min-h-[34px] ${
                     paymentModeType === "combo"
-                      ? "bg-primary text-primary-foreground shadow-sm"
+                      ? "bg-primary text-primary-foreground shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -555,9 +555,9 @@ export const RecordPaymentDialog = ({
                 <button
                   type="button"
                   onClick={() => setPaymentModeType("single")}
-                  className={`px-3 py-1.5 rounded-md font-medium transition-all ${
+                  className={`px-3 py-1.5 rounded-md font-semibold transition-all min-h-[34px] ${
                     paymentModeType === "single"
-                      ? "bg-primary text-primary-foreground shadow-sm"
+                      ? "bg-primary text-primary-foreground shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -1125,40 +1125,48 @@ export const RecordPaymentDialog = ({
                   </Select>
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-xs">Payment Mode *</Label>
-                  <Select
-                    value={paymentMode}
-                    onValueChange={(val: "cash" | "online") => setPaymentMode(val)}
-                  >
-                    <SelectTrigger className="h-9 text-xs">
-                      <SelectValue placeholder="Mode" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cash" className="text-xs">
-                        Cash
-                      </SelectItem>
-                      <SelectItem value="online" className="text-xs">
-                        Online / UPI
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Payment Mode *</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMode("cash")}
+                      className={`h-11 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 min-h-[44px] ${
+                        paymentMode === "cash"
+                          ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      Cash
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMode("online")}
+                      className={`h-11 rounded-lg text-xs font-bold border transition-all flex items-center justify-center gap-1.5 min-h-[44px] ${
+                        paymentMode === "online"
+                          ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      Online / UPI
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-xs">Payment Date *</Label>
+                  <Label className="text-xs font-semibold">Payment Date *</Label>
                   <Input
                     type="date"
                     value={paymentDate}
                     onChange={(e) => setPaymentDate(e.target.value)}
-                    className="h-9 text-xs"
+                    className="h-10 text-xs sm:text-sm font-medium"
                     required
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <Label className="text-xs">Remarks / Transaction Note (Optional)</Label>
+                <Label className="text-xs font-semibold">Remarks / Transaction Note (Optional)</Label>
                 <Input
                   id="remarks"
                   placeholder="Optional notes, UPI reference, or receipt comments"
@@ -1172,30 +1180,36 @@ export const RecordPaymentDialog = ({
         </div>
 
         {/* Modal Sticky Footer */}
-        <div className="p-4 border-t bg-background flex items-center justify-between gap-3">
-          <div className="text-xs text-muted-foreground hidden sm:block">
-            {paymentModeType === "combo" ? (
-              <span>
-                Total to Pay: <strong className="text-primary text-sm font-bold">{formatINR(calculatedComboTotal)}</strong>
-              </span>
-            ) : (
-              <span>
-                Single Item: <strong className="text-primary text-sm font-bold">{formatINR(singleAmount || 0)}</strong>
-              </span>
-            )}
+        <div className="p-3.5 sm:p-4 border-t bg-background flex flex-col sm:flex-row sm:items-center justify-between gap-3 sticky bottom-0 z-20 pb-safe shadow-xs">
+          <div className="flex items-center justify-between sm:justify-start gap-2">
+            <span className="text-xs text-muted-foreground uppercase font-bold">Total Amount:</span>
+            <span className="text-xl font-black text-primary">
+              {formatINR(paymentModeType === "combo" ? calculatedComboTotal : (singleAmount || 0))}
+            </span>
           </div>
 
-          <div className="flex gap-2 w-full sm:w-auto">
-            <Button type="button" variant="outline" onClick={handleClose} className="flex-1 sm:flex-initial">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              className="h-11 sm:h-10 text-xs font-semibold px-4"
+            >
               Cancel
             </Button>
             <Button
               type="submit"
               form="record-payment-form"
               disabled={loading || !selectedStudentId || (paymentModeType === "combo" ? calculatedComboTotal <= 0 : !singleAmount)}
-              className="flex-1 sm:flex-initial bg-primary hover:bg-primary/90 font-bold"
+              className="flex-1 sm:flex-initial h-11 sm:h-10 text-xs sm:text-sm font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs gap-1.5"
             >
-              {loading ? "Recording..." : "Record & Generate Receipt"}
+              {loading ? (
+                <>
+                  <RotateCw className="h-4 w-4 animate-spin" /> Recording...
+                </>
+              ) : (
+                "Confirm & Generate Receipt"
+              )}
             </Button>
           </div>
         </div>

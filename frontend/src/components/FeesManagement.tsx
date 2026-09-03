@@ -49,10 +49,19 @@ import { RecordPaymentDialog } from "./RecordPaymentDialog";
 
 interface FeesManagementProps {
   onRefreshParent?: () => void;
+  defaultTab?: "payments" | "class-status" | "overview";
 }
 
-export const FeesManagement = ({ onRefreshParent }: FeesManagementProps) => {
-  const [activeTab, setActiveTab] = useState<"payments" | "class-status" | "overview">("payments");
+export const FeesManagement = ({ onRefreshParent, defaultTab }: FeesManagementProps) => {
+  const [activeTab, setActiveTab] = useState<"payments" | "class-status" | "overview">(
+    defaultTab || "payments"
+  );
+
+  useEffect(() => {
+    if (defaultTab) {
+      setActiveTab(defaultTab);
+    }
+  }, [defaultTab]);
   const [loading, setLoading] = useState(false);
   const [payments, setPayments] = useState<FeePayment[]>([]);
 
@@ -300,14 +309,14 @@ export const FeesManagement = ({ onRefreshParent }: FeesManagementProps) => {
             onValueChange={(val: any) => setActiveTab(val)}
             className="w-full mt-4"
           >
-            <TabsList className="grid grid-cols-3 w-full max-w-md">
-              <TabsTrigger value="payments" className="text-xs sm:text-sm font-medium">
+            <TabsList className="grid grid-cols-3 w-full max-w-md h-auto p-1 bg-muted/70">
+              <TabsTrigger value="payments" className="text-[11px] sm:text-xs font-semibold py-2 px-1">
                 Payment History
               </TabsTrigger>
-              <TabsTrigger value="class-status" className="text-xs sm:text-sm font-medium">
-                Class Monthly Status
+              <TabsTrigger value="class-status" className="text-[11px] sm:text-xs font-semibold py-2 px-1">
+                Class Monthly
               </TabsTrigger>
-              <TabsTrigger value="overview" className="text-xs sm:text-sm font-medium">
+              <TabsTrigger value="overview" className="text-[11px] sm:text-xs font-semibold py-2 px-1">
                 Class Overview
               </TabsTrigger>
             </TabsList>
@@ -479,85 +488,158 @@ export const FeesManagement = ({ onRefreshParent }: FeesManagementProps) => {
                   No payment records found matching the selected filters.
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Receipt</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Student Name</TableHead>
-                        <TableHead>Admn No.</TableHead>
-                        <TableHead>Class</TableHead>
-                        <TableHead>Session</TableHead>
-                        <TableHead>Fee Type</TableHead>
-                        <TableHead>Mode</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredPayments.map((p) => {
-                        const pid = p.id || p._id;
-                        const studentClass = normalizeClass(p.student?.class);
-                        return (
-                          <TableRow key={pid}>
-                            <TableCell className="font-semibold text-xs text-primary">
-                              {p.receiptNumber}
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground font-mono">
-                              {formatDateDDMMYYYY(p.paymentDate)}
-                            </TableCell>
-                            <TableCell className="font-medium text-sm">
-                              {p.student?.studentName || "-"}
-                            </TableCell>
-                            <TableCell className="text-xs">
-                              {p.student?.admissionNumber || "-"}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className="font-bold text-xs">
-                                {studentClass || p.student?.class || "-"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-xs text-muted-foreground">{p.session}</TableCell>
-                            <TableCell className="capitalize text-xs">
-                              {p.feeType === "monthly" ? `${p.month || ""} Fee` : p.feeType}
-                            </TableCell>
-                            <TableCell className="capitalize text-xs">
-                              <Badge variant="secondary" className="font-normal text-[11px]">
+                <>
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Receipt</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Student Name</TableHead>
+                          <TableHead>Admn No.</TableHead>
+                          <TableHead>Class</TableHead>
+                          <TableHead>Session</TableHead>
+                          <TableHead>Fee Type</TableHead>
+                          <TableHead>Mode</TableHead>
+                          <TableHead className="text-right">Amount</TableHead>
+                          <TableHead className="text-right">Action</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredPayments.map((p) => {
+                          const pid = p.id || p._id;
+                          const studentClass = normalizeClass(p.student?.class);
+                          return (
+                            <TableRow key={pid}>
+                              <TableCell className="font-semibold text-xs text-primary">
+                                {p.receiptNumber}
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground font-mono">
+                                {formatDateDDMMYYYY(p.paymentDate)}
+                              </TableCell>
+                              <TableCell className="font-medium text-sm">
+                                {p.student?.studentName || "-"}
+                              </TableCell>
+                              <TableCell className="text-xs">
+                                {p.student?.admissionNumber || "-"}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="font-bold text-xs">
+                                  {studentClass || p.student?.class || "-"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-xs text-muted-foreground">{p.session}</TableCell>
+                              <TableCell className="capitalize text-xs">
+                                {p.feeType === "monthly" ? `${p.month || ""} Fee` : p.feeType}
+                              </TableCell>
+                              <TableCell className="capitalize text-xs">
+                                <Badge variant="secondary" className="font-normal text-[11px]">
+                                  {p.paymentMode}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right font-bold text-green-600">
+                                {formatINR(p.amount)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 w-7 p-0"
+                                    onClick={() => setSelectedReceipt(p)}
+                                    title="View / Print Receipt"
+                                  >
+                                    <Eye className="h-3.5 w-3.5 text-primary" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                    onClick={() => setPaymentToDelete(p)}
+                                    title="Delete Payment Record"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Mobile Card List View */}
+                  <div className="md:hidden divide-y divide-slate-100">
+                    {filteredPayments.map((p) => {
+                      const pid = p.id || p._id;
+                      const studentClass = normalizeClass(p.student?.class);
+                      return (
+                        <div key={pid} className="py-3.5 space-y-2.5">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <div className="font-bold text-sm text-slate-900">
+                                {p.student?.studentName || "Student"}
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                                <span className="font-mono">{p.student?.admissionNumber || "—"}</span>
+                                <span>&bull;</span>
+                                <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 font-bold">
+                                  {studentClass || p.student?.class || "PG"}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-black text-base text-green-700">
+                                {formatINR(p.amount)}
+                              </div>
+                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 capitalize">
                                 {p.paymentMode}
                               </Badge>
-                            </TableCell>
-                            <TableCell className="text-right font-bold text-green-600">
-                              {formatINR(p.amount)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-1">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-7 w-7 p-0"
-                                  onClick={() => setSelectedReceipt(p)}
-                                  title="View / Print Receipt"
-                                >
-                                  <Eye className="h-3.5 w-3.5 text-primary" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-7 w-7 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                  onClick={() => setPaymentToDelete(p)}
-                                  title="Delete Payment Record"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between text-xs text-slate-500 bg-slate-50 p-2 rounded-md">
+                            <div>
+                              <span>Receipt: </span>
+                              <span className="font-mono font-semibold text-primary">{p.receiptNumber}</span>
+                            </div>
+                            <div>
+                              <span>{formatDateDDMMYYYY(p.paymentDate)}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-2 pt-1">
+                            <span className="text-xs text-slate-600 capitalize">
+                              {p.feeType === "monthly" ? `${p.month || ""} Tuition Fee` : p.feeType}
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setSelectedReceipt(p)}
+                                className="h-8 text-xs font-semibold gap-1 text-primary border-primary/30"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                Receipt
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setPaymentToDelete(p)}
+                                className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                title="Delete"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
               )}
             </div>
           )}
@@ -698,7 +780,8 @@ export const FeesManagement = ({ onRefreshParent }: FeesManagementProps) => {
                     </h3>
                   </div>
 
-                  <div className="overflow-x-auto">
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -813,6 +896,104 @@ export const FeesManagement = ({ onRefreshParent }: FeesManagementProps) => {
                           })}
                       </TableBody>
                     </Table>
+                  </div>
+
+                  {/* Mobile Card List View for Class Status */}
+                  <div className="md:hidden divide-y divide-slate-100">
+                    {classStatusData.students
+                      .filter((st: any) => {
+                        if (statusFilterMode === "paid") return st.status === "paid";
+                        if (statusFilterMode === "pending") return st.status === "pending";
+                        return true;
+                      })
+                      .map((st: any) => {
+                        const isPaid = st.status === "paid";
+                        return (
+                          <div key={st.student.id} className="py-3.5 space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <div className="font-bold text-sm text-slate-900">
+                                  {st.student.studentName}
+                                </div>
+                                <div className="text-xs font-mono text-muted-foreground mt-0.5">
+                                  {st.student.admissionNumber} &bull; Parent: {st.student.fatherName || "—"}
+                                </div>
+                              </div>
+                              <div>
+                                {isPaid ? (
+                                  <Badge className="bg-green-600 text-white text-[11px] gap-1">
+                                    <CheckCircle2 className="h-3 w-3" /> Paid
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 text-[11px] gap-1">
+                                    <Clock className="h-3 w-3" /> Pending
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between text-xs pt-1">
+                              <div>
+                                <span className="text-muted-foreground">Fee: </span>
+                                <span className="font-bold text-slate-900">
+                                  {isPaid ? formatINR(st.amount) : formatINR(st.student.monthlyFee || 1250)}
+                                </span>
+                                {isPaid && st.receiptNumber && (
+                                  <span className="font-mono text-primary ml-2 font-semibold">
+                                    #{st.receiptNumber}
+                                  </span>
+                                )}
+                              </div>
+
+                              <div>
+                                {isPaid ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      setSelectedReceipt({
+                                        id: st.paymentId,
+                                        _id: st.paymentId,
+                                        receiptNumber: st.receiptNumber,
+                                        paymentDate: st.paymentDate,
+                                        amount: st.amount,
+                                        feeType: "monthly",
+                                        month: statusMonth,
+                                        session: statusSession,
+                                        paymentMode: st.paymentMode,
+                                        studentId: st.student.id,
+                                        student: st.student,
+                                      } as any)
+                                    }
+                                    className="h-8 text-xs font-semibold gap-1 text-primary border-primary/30"
+                                  >
+                                    <Eye className="h-3.5 w-3.5" />
+                                    Receipt
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    onClick={() =>
+                                      setRecordDialog({
+                                        open: true,
+                                        studentId: st.student.id,
+                                        session: statusSession,
+                                        feeType: "monthly",
+                                        month: statusMonth,
+                                        amount: st.student.monthlyFee || 1250,
+                                      })
+                                    }
+                                    className="h-8 text-xs font-semibold gap-1 bg-primary text-primary-foreground"
+                                  >
+                                    <Plus className="h-3.5 w-3.5" />
+                                    Collect Fee
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                   </div>
                 </div>
               )}

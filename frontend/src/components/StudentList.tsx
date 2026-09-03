@@ -24,10 +24,14 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
+  Filter,
+  SlidersHorizontal,
+  X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -93,6 +97,17 @@ export const StudentList = ({ onSuccess, onAddStudent }: StudentListProps) => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [feeStatusFilter, setFeeStatusFilter] = useState("all");
   const [sortByClass, setSortByClass] = useState<"none" | "asc" | "desc">("none");
+  const [sortBy, setSortBy] = useState<"class" | "name" | "admission" | "none">("none");
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
+  // Active Filter Count
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (classFilter !== "all") count++;
+    if (statusFilter !== "all") count++;
+    if (feeStatusFilter !== "all") count++;
+    return count;
+  }, [classFilter, statusFilter, feeStatusFilter]);
 
   // Pagination (10 per page)
   const [currentPage, setCurrentPage] = useState(1);
@@ -118,11 +133,15 @@ export const StudentList = ({ onSuccess, onAddStudent }: StudentListProps) => {
       if (feeStatusFilter !== "all") params.append("feeStatus", feeStatusFilter);
 
       const { data } = await api.get(`/students?${params.toString()}`);
-      setStudents(data || []);
-    } catch (error: any) {
+      if (data.success) {
+        setStudents(data.data || []);
+      } else {
+        toast({ title: "Failed to load students", description: data.message, variant: "destructive" });
+      }
+    } catch (err: any) {
       toast({
-        title: "Error loading students",
-        description: error.response?.data?.message || error.message,
+        title: "Error fetching student records",
+        description: err.response?.data?.message || err.message,
         variant: "destructive",
       });
     } finally {
@@ -140,7 +159,7 @@ export const StudentList = ({ onSuccess, onAddStudent }: StudentListProps) => {
   // Reset to first page whenever search/filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, classFilter, statusFilter, feeStatusFilter, sortByClass]);
+  }, [search, classFilter, statusFilter, feeStatusFilter, sortByClass, sortBy]);
 
   // Summary Metrics computed from actual records
   const metrics = useMemo(() => {
@@ -173,15 +192,19 @@ export const StudentList = ({ onSuccess, onAddStudent }: StudentListProps) => {
   // Sorted and Paginated Students
   const sortedStudents = useMemo(() => {
     const list = [...students];
-    if (sortByClass !== "none") {
+    if (sortBy === "class" || sortByClass !== "none") {
       list.sort((a, b) => {
         const orderA = CLASS_ORDER[normalizeClass(a.class)] || 99;
         const orderB = CLASS_ORDER[normalizeClass(b.class)] || 99;
-        return sortByClass === "asc" ? orderA - orderB : orderB - orderA;
+        return sortByClass === "desc" ? orderB - orderA : orderA - orderB;
       });
+    } else if (sortBy === "name") {
+      list.sort((a, b) => (a.studentName || "").localeCompare(b.studentName || ""));
+    } else if (sortBy === "admission") {
+      list.sort((a, b) => (a.admissionNumber || "").localeCompare(b.admissionNumber || ""));
     }
     return list;
-  }, [students, sortByClass]);
+  }, [students, sortBy, sortByClass]);
 
   const totalPages = Math.ceil(sortedStudents.length / itemsPerPage) || 1;
   const paginatedStudents = useMemo(() => {
@@ -198,7 +221,8 @@ export const StudentList = ({ onSuccess, onAddStudent }: StudentListProps) => {
     classFilter !== "all" ||
     statusFilter !== "all" ||
     feeStatusFilter !== "all" ||
-    sortByClass !== "none";
+    sortByClass !== "none" ||
+    sortBy !== "none";
 
   const handleClearFilters = () => {
     setSearch("");
@@ -206,6 +230,7 @@ export const StudentList = ({ onSuccess, onAddStudent }: StudentListProps) => {
     setStatusFilter("all");
     setFeeStatusFilter("all");
     setSortByClass("none");
+    setSortBy("none");
   };
 
   const handleDelete = async () => {
@@ -306,75 +331,311 @@ export const StudentList = ({ onSuccess, onAddStudent }: StudentListProps) => {
         </div>
       </div>
 
-      {/* 3. Unified Filter & Search Toolbar */}
-      <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        {/* Search input with leading icon */}
-        <div className="relative flex-1 min-w-[240px]">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input
-            placeholder="Search student, admission no, parent, or mobile..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-9 text-xs bg-slate-50/50 border-slate-200 focus:bg-white transition-colors"
-          />
+      {/* 3. Search & Filter Bar */}
+      <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-xs space-y-2.5">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5">
+          {/* Search input with leading icon & clear button */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="Search student, admission no, parent, or mobile..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 pr-8 h-10 text-xs sm:text-sm bg-slate-50/70 border-slate-200 focus:bg-white transition-colors"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700"
+                aria-label="Clear search text"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Mobile Filter & Sort Bar (md:hidden) */}
+          <div className="flex md:hidden items-center gap-2">
+            <Button
+              type="button"
+              variant={activeFilterCount > 0 ? "default" : "outline"}
+              size="sm"
+              onClick={() => setMobileFilterOpen(true)}
+              className="flex-1 h-10 text-xs font-semibold gap-1.5"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              Filters {activeFilterCount > 0 ? `(${activeFilterCount})` : ""}
+            </Button>
+
+            <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
+              <SelectTrigger className="flex-1 h-10 text-xs font-semibold bg-white border-slate-200">
+                <SelectValue placeholder="Sort By" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none" className="text-xs">Sort: Default</SelectItem>
+                <SelectItem value="class" className="text-xs">Sort: Class (PG &rarr; UKG)</SelectItem>
+                <SelectItem value="name" className="text-xs">Sort: Student Name</SelectItem>
+                <SelectItem value="admission" className="text-xs">Sort: Admission No</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Desktop Filter Controls (hidden md:flex) */}
+          <div className="hidden md:flex flex-wrap items-center gap-2">
+            {/* Class Filter */}
+            <Select value={classFilter} onValueChange={setClassFilter}>
+              <SelectTrigger className="w-[120px] h-9 text-xs font-medium bg-white border-slate-200">
+                <SelectValue placeholder="All Classes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-xs">All Classes</SelectItem>
+                {PREK_CLASSES.map((cls) => (
+                  <SelectItem key={cls} value={cls} className="text-xs">
+                    {cls}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Fee Status Filter */}
+            <Select value={feeStatusFilter} onValueChange={setFeeStatusFilter}>
+              <SelectTrigger className="w-[120px] h-9 text-xs font-medium bg-white border-slate-200">
+                <SelectValue placeholder="All Fees" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-xs">All Fees</SelectItem>
+                <SelectItem value="Fees Paid" className="text-xs">Paid Fees</SelectItem>
+                <SelectItem value="Pending Fees" className="text-xs">Pending Fees</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Status Filter */}
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[110px] h-9 text-xs font-medium bg-white border-slate-200">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-xs">All Status</SelectItem>
+                <SelectItem value="active" className="text-xs">Active</SelectItem>
+                <SelectItem value="inactive" className="text-xs">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Reset / Clear Button */}
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearFilters}
+                className="h-9 px-2.5 text-xs text-slate-500 hover:text-slate-900 gap-1"
+                title="Reset all filters"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Clear
+              </Button>
+            )}
+          </div>
         </div>
 
-        {/* Filter controls */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Class Filter */}
-          <Select value={classFilter} onValueChange={setClassFilter}>
-            <SelectTrigger className="w-[120px] h-9 text-xs font-medium bg-white border-slate-200">
-              <SelectValue placeholder="All Classes" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="text-xs">All Classes</SelectItem>
-              {PREK_CLASSES.map((cls) => (
-                <SelectItem key={cls} value={cls} className="text-xs">
-                  {cls}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Fee Status Filter */}
-          <Select value={feeStatusFilter} onValueChange={setFeeStatusFilter}>
-            <SelectTrigger className="w-[120px] h-9 text-xs font-medium bg-white border-slate-200">
-              <SelectValue placeholder="All Fees" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="text-xs">All Fees</SelectItem>
-              <SelectItem value="Fees Paid" className="text-xs">Paid Fees</SelectItem>
-              <SelectItem value="Pending Fees" className="text-xs">Pending Fees</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Status Filter */}
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[110px] h-9 text-xs font-medium bg-white border-slate-200">
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="text-xs">All Status</SelectItem>
-              <SelectItem value="active" className="text-xs">Active</SelectItem>
-              <SelectItem value="inactive" className="text-xs">Inactive</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Reset / Clear Button */}
-          {hasActiveFilters && (
+        {/* Active Filter Chips */}
+        {hasActiveFilters && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-100">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+              Active:
+            </span>
+            {classFilter !== "all" && (
+              <Badge variant="secondary" className="text-[11px] py-0.5 px-2 gap-1 bg-slate-100 text-slate-800 font-medium">
+                Class: {classFilter}
+                <button type="button" onClick={() => setClassFilter("all")} className="hover:text-destructive">
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {feeStatusFilter !== "all" && (
+              <Badge variant="secondary" className="text-[11px] py-0.5 px-2 gap-1 bg-slate-100 text-slate-800 font-medium">
+                Fee: {feeStatusFilter}
+                <button type="button" onClick={() => setFeeStatusFilter("all")} className="hover:text-destructive">
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {statusFilter !== "all" && (
+              <Badge variant="secondary" className="text-[11px] py-0.5 px-2 gap-1 bg-slate-100 text-slate-800 font-medium">
+                Status: {statusFilter}
+                <button type="button" onClick={() => setStatusFilter("all")} className="hover:text-destructive">
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {sortBy !== "none" && (
+              <Badge variant="secondary" className="text-[11px] py-0.5 px-2 gap-1 bg-slate-100 text-slate-800 font-medium">
+                Sort: {sortBy}
+                <button type="button" onClick={() => setSortBy("none")} className="hover:text-destructive">
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {search && (
+              <Badge variant="secondary" className="text-[11px] py-0.5 px-2 gap-1 bg-slate-100 text-slate-800 font-medium truncate max-w-[200px]">
+                "{search}"
+                <button type="button" onClick={() => setSearch("")} className="hover:text-destructive">
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
             <Button
               variant="ghost"
               size="sm"
               onClick={handleClearFilters}
-              className="h-9 px-2.5 text-xs text-slate-500 hover:text-slate-900 gap-1"
-              title="Reset all filters"
+              className="h-6 text-[11px] text-destructive hover:bg-destructive/10 px-1.5 font-semibold"
             >
-              <RefreshCw className="h-3.5 w-3.5" />
-              Clear
+              Clear all
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
+
+      {/* Mobile Filter Bottom Sheet */}
+      <Sheet open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
+        <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] p-4 space-y-4">
+          <SheetHeader className="text-left pb-2 border-b">
+            <SheetTitle className="text-base font-bold text-school-navy flex items-center justify-between">
+              <span>Filter Students</span>
+              {activeFilterCount > 0 && (
+                <Badge variant="secondary" className="text-xs font-semibold">
+                  {activeFilterCount} Active
+                </Badge>
+              )}
+            </SheetTitle>
+          </SheetHeader>
+
+          <div className="space-y-4 py-2 overflow-y-auto">
+            {/* Class Filter */}
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                Preschool Class
+              </span>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={classFilter === "all" ? "default" : "outline"}
+                  onClick={() => setClassFilter("all")}
+                  className="h-9 text-xs"
+                >
+                  All Classes
+                </Button>
+                {PREK_CLASSES.map((cls) => (
+                  <Button
+                    key={cls}
+                    type="button"
+                    size="sm"
+                    variant={classFilter === cls ? "default" : "outline"}
+                    onClick={() => setClassFilter(cls)}
+                    className="h-9 text-xs font-bold"
+                  >
+                    {cls}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Fee Status Filter */}
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                Fee Status
+              </span>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={feeStatusFilter === "all" ? "default" : "outline"}
+                  onClick={() => setFeeStatusFilter("all")}
+                  className="h-9 text-xs"
+                >
+                  All
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={feeStatusFilter === "Fees Paid" ? "default" : "outline"}
+                  onClick={() => setFeeStatusFilter("Fees Paid")}
+                  className="h-9 text-xs text-green-700 font-semibold"
+                >
+                  Paid
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={feeStatusFilter === "Pending Fees" ? "default" : "outline"}
+                  onClick={() => setFeeStatusFilter("Pending Fees")}
+                  className="h-9 text-xs text-amber-700 font-semibold"
+                >
+                  Pending
+                </Button>
+              </div>
+            </div>
+
+            {/* Student Account Status */}
+            <div className="space-y-2">
+              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                Account Status
+              </span>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={statusFilter === "all" ? "default" : "outline"}
+                  onClick={() => setStatusFilter("all")}
+                  className="h-9 text-xs"
+                >
+                  All
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={statusFilter === "active" ? "default" : "outline"}
+                  onClick={() => setStatusFilter("active")}
+                  className="h-9 text-xs font-semibold"
+                >
+                  Active
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={statusFilter === "inactive" ? "default" : "outline"}
+                  onClick={() => setStatusFilter("inactive")}
+                  className="h-9 text-xs font-semibold"
+                >
+                  Inactive
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 pt-2 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                handleClearFilters();
+                setMobileFilterOpen(false);
+              }}
+              className="flex-1 h-11 text-xs font-semibold text-slate-600"
+            >
+              Reset Filters
+            </Button>
+            <Button
+              type="button"
+              onClick={() => setMobileFilterOpen(false)}
+              className="flex-1 h-11 text-xs font-bold bg-primary text-primary-foreground"
+            >
+              Apply Filters
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* 4. Desktop Student Table & Mobile Card List */}
       <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
@@ -623,94 +884,143 @@ export const StudentList = ({ onSuccess, onAddStudent }: StudentListProps) => {
                 const isActive = student.status === "active";
 
                 return (
-                  <div key={sid} className="p-4 space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
+                  <div key={sid} className="p-4 space-y-3 bg-white">
+                    {/* Top Row: Avatar + Name + Admission No + More Menu (44x44 tap target) */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-3 min-w-0">
                         <div
-                          className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-xs shrink-0 border ${getAvatarBg(
+                          className={`h-11 w-11 rounded-full flex items-center justify-center font-black text-xs shrink-0 border ${getAvatarBg(
                             student.class
                           )}`}
                         >
                           {getInitials(student.studentName)}
                         </div>
-                        <div>
-                          <div className="font-bold text-sm text-slate-900">{student.studentName}</div>
-                          <div className="text-xs font-mono text-slate-500">{student.admissionNumber || "—"}</div>
+                        <div className="min-w-0">
+                          <div className="font-bold text-base text-slate-900 truncate">
+                            {student.studentName}
+                          </div>
+                          <div className="text-xs font-mono text-slate-500 truncate">
+                            {student.admissionNumber || "—"}
+                          </div>
                         </div>
                       </div>
 
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500">
-                            <MoreVertical className="h-4 w-4" />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-11 w-11 shrink-0 text-slate-500 hover:text-slate-900 rounded-full"
+                            title="More Actions"
+                            aria-label="More actions"
+                          >
+                            <MoreVertical className="h-5 w-5" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 text-xs">
-                          <DropdownMenuItem onClick={() => setSelectedStudent(student)} className="gap-2">
-                            <Eye className="h-3.5 w-3.5" /> View Profile & Ledger
+                        <DropdownMenuContent align="end" className="w-52 text-xs p-1.5 space-y-0.5">
+                          <DropdownMenuLabel className="text-[10px] uppercase font-bold text-slate-400 px-2 py-1">
+                            Student Actions
+                          </DropdownMenuLabel>
+                          <DropdownMenuItem
+                            onClick={() => setSelectedStudent(student)}
+                            className="gap-2.5 py-2.5 cursor-pointer font-medium"
+                          >
+                            <Eye className="h-4 w-4 text-slate-500" /> View Profile & Ledger
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setEditStudent(student)} className="gap-2 text-primary">
-                            <Pencil className="h-3.5 w-3.5" /> Edit Details
+                          <DropdownMenuItem
+                            onClick={() => setEditStudent(student)}
+                            className="gap-2.5 py-2.5 cursor-pointer font-medium text-primary"
+                          >
+                            <Pencil className="h-4 w-4" /> Edit Student Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setPayStudent(student)} className="gap-2">
-                            <Receipt className="h-3.5 w-3.5 text-emerald-600" /> Record Payment
+                          <DropdownMenuItem
+                            onClick={() => setPayStudent(student)}
+                            className="gap-2.5 py-2.5 cursor-pointer font-medium text-emerald-700"
+                          >
+                            <Receipt className="h-4 w-4" /> Record Fee Payment
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setHistoryStudent(student)} className="gap-2">
-                            <History className="h-3.5 w-3.5 text-blue-600" /> Payment History
+                          <DropdownMenuItem
+                            onClick={() => setHistoryStudent(student)}
+                            className="gap-2.5 py-2.5 cursor-pointer font-medium text-blue-700"
+                          >
+                            <History className="h-4 w-4" /> Payment History
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator />
+                          <DropdownMenuSeparator className="my-1" />
                           <DropdownMenuItem
                             onClick={() => setDeleteStudent(student)}
-                            className="gap-2 text-destructive"
+                            className="gap-2.5 py-2.5 cursor-pointer font-medium text-destructive focus:bg-destructive/10"
                           >
-                            <Trash2 className="h-3.5 w-3.5" /> Delete Student
+                            <Trash2 className="h-4 w-4" /> Delete Student
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50/70 p-2.5 rounded-lg border border-slate-200/60">
+                    {/* Middle Info Section */}
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50/80 p-3 rounded-lg border border-slate-200/60">
                       <div>
-                        <span className="text-slate-500">Class: </span>
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] font-bold px-1.5 py-0 ${getAvatarBg(student.class)}`}
-                        >
-                          {normCls || student.class}
-                        </Badge>
+                        <span className="text-slate-500 block text-[11px]">Class & Status</span>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] font-bold px-1.5 py-0 ${getAvatarBg(student.class)}`}
+                          >
+                            {normCls || student.class}
+                          </Badge>
+                          <span
+                            className={`inline-flex items-center gap-1 font-semibold text-[11px] ${
+                              isActive ? "text-emerald-700" : "text-slate-500"
+                            }`}
+                          >
+                            <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-600" : "bg-slate-400"}`} />
+                            {isActive ? "Active" : "Inactive"}
+                          </span>
+                        </div>
                       </div>
+
                       <div>
-                        <span className="text-slate-500">Status: </span>
-                        <span className={`font-semibold ${isActive ? "text-emerald-700" : "text-slate-500"}`}>
-                          {isActive ? "Active" : "Inactive"}
+                        <span className="text-slate-500 block text-[11px]">Parent / Guardian</span>
+                        <span className="font-semibold text-slate-800 truncate block mt-0.5">
+                          {student.fatherName || "—"}
                         </span>
                       </div>
-                      <div className="truncate">
-                        <span className="text-slate-500">Parent: </span>
-                        <span className="font-medium text-slate-800">{student.fatherName || "—"}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500">Mobile: </span>
-                        <span className="font-mono text-slate-800">{student.contactNumber || "—"}</span>
-                      </div>
+
+                      {student.contactNumber && (
+                        <div className="col-span-2 flex items-center justify-between pt-1 border-t border-slate-200/50">
+                          <span className="text-[11px] text-slate-500">Contact Number:</span>
+                          <a
+                            href={`tel:${student.contactNumber}`}
+                            className="font-mono text-xs font-semibold text-primary flex items-center gap-1 hover:underline min-h-[32px] py-1"
+                          >
+                            <Phone className="h-3 w-3" />
+                            {student.contactNumber}
+                          </a>
+                        </div>
+                      )}
+
                       <div className="col-span-2 flex justify-between items-center pt-1 border-t border-slate-200/60">
                         <div>
-                          <span className="text-slate-500">Fee: </span>
-                          <span className="font-bold text-slate-900">{formatINR(student.monthlyFee || 0)}/mo</span>
+                          <span className="text-slate-500 text-[11px] block">Monthly Fee</span>
+                          <span className="font-black text-sm text-slate-900">
+                            {formatINR(student.monthlyFee || 0)}/mo
+                          </span>
                         </div>
-                        <div className="text-emerald-600 font-semibold text-[11px]">
-                          Paid: {formatINR(student.totalPaid || 0)}
+                        <div className="text-right">
+                          <span className="text-slate-500 text-[11px] block">Total Paid</span>
+                          <span className="text-emerald-700 font-bold text-xs">
+                            {formatINR(student.totalPaid || 0)}
+                          </span>
                         </div>
                       </div>
                     </div>
 
+                    {/* Primary Action Button: View Details (min height 44px) */}
                     <Button
-                      size="sm"
                       onClick={() => setFeeStatusStudent(student)}
-                      className="w-full h-8 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5"
+                      className="w-full h-11 text-xs sm:text-sm font-bold bg-primary hover:bg-primary/90 text-primary-foreground gap-2 shadow-xs"
                     >
-                      <CalendarCheck className="h-3.5 w-3.5" />
-                      View Academic Fee Ledger
+                      <CalendarCheck className="h-4 w-4" />
+                      View Details & Fee Ledger
                     </Button>
                   </div>
                 );

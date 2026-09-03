@@ -207,7 +207,8 @@ export const FeeReceipt = ({ payment, onClose, open, onOpenChange, onDeletePayme
         {/* Receipt Printable / Render Card with clean A4 proportions */}
         <Card
           id="fee-receipt-content"
-          className="p-6 sm:p-7 print:p-6 print:shadow-none bg-white text-slate-900 border border-slate-200 shadow-sm max-w-xl mx-auto font-sans w-full"
+          ref={receiptRef}
+          className="p-3 sm:p-7 print:p-6 print:shadow-none bg-white text-slate-900 border border-slate-200 shadow-xs max-w-xl mx-auto font-sans w-full overflow-hidden"
         >
           <div className="space-y-4">
             {/* HEADER: LOGO & SCHOOL DETAILS */}
@@ -487,14 +488,14 @@ export const FeeReceipt = ({ payment, onClose, open, onOpenChange, onDeletePayme
       </div>
 
       {/* Action Buttons Footer (Sticky at bottom, hidden when printing) */}
-      <div className="flex flex-wrap gap-2 print:hidden justify-between items-center pt-3 border-t bg-background mt-auto z-10">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap gap-2 print:hidden justify-between items-center pt-3 border-t bg-background mt-auto z-10 pb-safe">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {onDeletePayment && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => setConfirmDelete(true)}
-              className="text-xs h-9 gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10"
+              className="text-xs h-10 sm:h-9 gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10 flex-1 sm:flex-initial min-h-[40px]"
             >
               <Trash2 className="h-3.5 w-3.5" />
               Delete Payment
@@ -506,17 +507,17 @@ export const FeeReceipt = ({ payment, onClose, open, onOpenChange, onDeletePayme
             size="sm"
             onClick={handleRegenerate}
             disabled={refreshing}
-            className="text-xs h-9 gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+            className="text-xs h-10 sm:h-9 gap-1.5 border-primary/40 text-primary hover:bg-primary/10 flex-1 sm:flex-initial min-h-[40px]"
             title="Refresh receipt with latest student name, class, parent & contact details"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
-            {refreshing ? "Updating..." : "Regenerate with Updated Details"}
+            {refreshing ? "Updating..." : "Regenerate"}
           </Button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           {onClose && (
-            <Button variant="outline" onClick={onClose} className="text-xs h-9">
+            <Button variant="outline" onClick={onClose} className="text-xs h-10 sm:h-9 min-h-[40px] flex-1 sm:flex-initial">
               Close
             </Button>
           )}
@@ -524,14 +525,14 @@ export const FeeReceipt = ({ payment, onClose, open, onOpenChange, onDeletePayme
             onClick={handleDownloadPDF}
             disabled={downloading}
             variant="secondary"
-            className="text-xs h-9 gap-1.5 font-medium"
+            className="text-xs h-10 sm:h-9 gap-1.5 font-semibold min-h-[40px] flex-1 sm:flex-initial"
           >
             <Download className="h-3.5 w-3.5" />
-            {downloading ? "Downloading..." : "Download PDF"}
+            {downloading ? "Downloading..." : "PDF"}
           </Button>
-          <Button onClick={handlePrint} className="text-xs h-9 gap-1.5 font-medium">
+          <Button onClick={handlePrint} className="text-xs h-10 sm:h-9 gap-1.5 font-bold min-h-[40px] flex-1 sm:flex-initial bg-primary text-primary-foreground">
             <Printer className="h-3.5 w-3.5" />
-            Print Receipt
+            Print
           </Button>
         </div>
       </div>
@@ -575,7 +576,7 @@ export const FeeReceipt = ({ payment, onClose, open, onOpenChange, onDeletePayme
   if (open !== undefined && onOpenChange) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-4 sm:p-6 overflow-hidden">
+        <DialogContent className="w-full sm:max-w-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col p-3 sm:p-6 overflow-hidden">
           {content}
         </DialogContent>
       </Dialog>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { formatINR, formatDateDDMMYYYY } from "@/lib/academicYear";
@@ -140,12 +140,33 @@ export const StudentFeeStatusDialog = ({
     ? Math.round((monthlySummary.paidMonths / 12) * 100)
     : 0;
 
+  const totalPaidInSession = useMemo(() => {
+    if (!feeStatus) return 0;
+    let total = 0;
+    if (feeStatus.monthlyFees) {
+      feeStatus.monthlyFees.forEach((m: any) => {
+        if (m.status === "paid" && m.payment?.amount) {
+          total += Number(m.payment.amount);
+        }
+      });
+    }
+    if (feeStatus.annualFee?.status === "paid" && feeStatus.annualFee.totalPaid) {
+      total += Number(feeStatus.annualFee.totalPaid);
+    }
+    if (feeStatus.otherPayments) {
+      feeStatus.otherPayments.forEach((o: any) => {
+        total += Number(o.amount || 0);
+      });
+    }
+    return total;
+  }, [feeStatus]);
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl max-h-[92vh] flex flex-col p-0 overflow-hidden">
+        <DialogContent className="w-full sm:max-w-4xl max-h-[95vh] sm:max-h-[92vh] flex flex-col p-0 overflow-hidden">
           {/* Header */}
-          <div className="p-6 pb-4 border-b bg-gradient-to-r from-primary/5 via-background to-secondary/5">
+          <div className="p-4 sm:p-6 pb-3 sm:pb-4 border-b bg-gradient-to-r from-primary/5 via-background to-secondary/5">
             <DialogHeader>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -388,43 +409,56 @@ export const StudentFeeStatusDialog = ({
                       </Table>
                     </div>
 
-                    {/* Mobile Grid/Card View */}
-                    <div className="sm:hidden grid grid-cols-1 gap-2 p-3">
+                    {/* Mobile Card List for 12 Academic Months */}
+                    <div className="sm:hidden divide-y divide-slate-100 p-2.5">
                       {feeStatus.monthlyFees.map((item) => {
                         const isPaid = item.status === "paid";
                         return (
                           <div
                             key={item.label}
-                            className={`p-3 rounded-lg border flex items-center justify-between gap-3 ${
-                              isPaid ? "bg-green-50/30 border-green-200" : "bg-card border-border"
+                            className={`p-3 rounded-xl my-1.5 transition-colors ${
+                              isPaid ? "bg-green-50/50 border border-green-200/70" : "bg-slate-50/80 border border-slate-200/70"
                             }`}
                           >
-                            <div className="space-y-1">
-                              <div className="font-semibold text-sm">{item.label}</div>
-                              <div className="flex items-center gap-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <div className="font-bold text-sm text-slate-900">{item.label}</div>
+                                <div className="text-xs text-muted-foreground mt-0.5">
+                                  Fee: <span className="font-bold text-slate-800">{formatINR(student.monthlyFee || 1250)}</span>
+                                </div>
+                              </div>
+
+                              <div>
                                 {isPaid ? (
-                                  <Badge className="bg-green-600 text-white text-[10px] h-5">
-                                    Paid: {formatINR(item.payment?.amount || 0)}
+                                  <Badge className="bg-green-600 text-white text-[11px] gap-1 font-semibold px-2 py-0.5">
+                                    <CheckCircle2 className="h-3 w-3" /> Paid
                                   </Badge>
                                 ) : (
-                                  <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 text-[10px] h-5">
-                                    Pending
+                                  <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50 text-[11px] gap-1 font-semibold px-2 py-0.5">
+                                    <Clock className="h-3 w-3" /> Pending
                                   </Badge>
-                                )}
-                                {isPaid && item.payment?.paymentDate && (
-                                  <span className="text-[11px] text-muted-foreground font-mono">
-                                    {formatDateDDMMYYYY(item.payment.paymentDate)}
-                                  </span>
                                 )}
                               </div>
                             </div>
 
-                            <div>
+                            {isPaid && item.payment && (
+                              <div className="flex items-center justify-between text-xs text-slate-600 bg-white/90 p-2 rounded-lg mt-2 border border-green-100">
+                                <div>
+                                  <span className="text-muted-foreground">Receipt: </span>
+                                  <span className="font-mono font-bold text-primary">{item.payment.receiptNumber || "—"}</span>
+                                </div>
+                                <div className="text-muted-foreground font-mono">
+                                  {formatDateDDMMYYYY(item.payment.paymentDate)}
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="pt-2">
                               {isPaid && item.payment ? (
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className="h-7 text-xs px-2"
+                                  className="w-full h-10 text-xs font-semibold gap-1.5 text-primary border-primary/30"
                                   onClick={() =>
                                     setActiveReceipt({
                                       ...item.payment!,
@@ -440,15 +474,15 @@ export const StudentFeeStatusDialog = ({
                                     })
                                   }
                                 >
-                                  <Receipt className="h-3 w-3 mr-1" /> View
+                                  <Receipt className="h-3.5 w-3.5" /> View Fee Receipt
                                 </Button>
                               ) : (
                                 <Button
                                   size="sm"
-                                  className="h-7 text-xs px-2 bg-primary text-primary-foreground"
+                                  className="w-full h-10 text-xs font-bold gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
                                   onClick={() => handleRecordMonthly(item.month)}
                                 >
-                                  <PlusCircle className="h-3 w-3 mr-1" /> Pay
+                                  <PlusCircle className="h-4 w-4" /> Pay Fee for {item.label}
                                 </Button>
                               )}
                             </div>
@@ -480,44 +514,67 @@ export const StudentFeeStatusDialog = ({
                             {formatINR(annualFee.totalPaid)}
                           </Badge>
                         ) : (
-                          <Badge
-                            variant="outline"
-                            className="text-amber-600 border-amber-300 bg-amber-50 gap-1 px-3 py-1 font-medium text-sm"
-                          >
+                          <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 gap-1 px-3 py-1 font-semibold text-sm">
                             <Clock className="h-3.5 w-3.5" /> Pending
                           </Badge>
                         )}
                       </div>
                     </div>
                   </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      <div className="p-3 rounded-lg bg-muted/40 border">
+                        <div className="text-xs text-muted-foreground">Standard Charges</div>
+                        <div className="text-lg font-bold mt-0.5">
+                          {formatINR(student.annualCharges || 0)}
+                        </div>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/40 border">
+                        <div className="text-xs text-muted-foreground">Amount Paid</div>
+                        <div className="text-lg font-bold text-green-600 mt-0.5">
+                          {formatINR(annualFee?.totalPaid || 0)}
+                        </div>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/40 border col-span-2 sm:col-span-1">
+                        <div className="text-xs text-muted-foreground">Balance Due</div>
+                        <div
+                          className={`text-lg font-bold mt-0.5 ${
+                            annualFee?.status === "pending"
+                              ? "text-amber-600"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          {formatINR(
+                            Math.max(0, (student.annualCharges || 0) - (annualFee?.totalPaid || 0))
+                          )}
+                        </div>
+                      </div>
+                    </div>
 
-                  <CardContent>
                     {annualFee?.payments && annualFee.payments.length > 0 ? (
-                      <div className="space-y-3">
-                        <div className="divide-y rounded-lg border bg-card">
-                          {annualFee.payments.map((p, idx) => (
+                      <div className="space-y-2">
+                        <div className="text-xs font-semibold text-muted-foreground">
+                          Payment Transactions:
+                        </div>
+                        <div className="space-y-2">
+                          {annualFee.payments.map((p) => (
                             <div
-                              key={p.id || idx}
-                              className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                              key={p.id}
+                              className="p-3 rounded-lg bg-card border flex items-center justify-between text-xs"
                             >
-                              <div className="space-y-1">
-                                <div className="font-semibold text-foreground text-sm flex items-center gap-2">
-                                  <span>Payment #{idx + 1}: {formatINR(p.amount)}</span>
-                                  <span className="capitalize text-xs bg-muted px-2 py-0.5 rounded font-normal">
-                                    {p.paymentMode}
-                                  </span>
+                              <div className="space-y-0.5">
+                                <div className="font-semibold text-foreground">
+                                  {formatINR(p.amount)} via {p.paymentMode}
                                 </div>
-                                <div className="text-xs text-muted-foreground">
-                                  Paid On:{" "}
-                                  <span className="font-mono">{formatDateDDMMYYYY(p.paymentDate)}</span>{" "}
-                                  | Receipt: <span className="font-mono text-primary">{p.receiptNumber}</span>
+                                <div className="text-muted-foreground">
+                                  {formatDateDDMMYYYY(p.paymentDate)} &bull; Receipt:{" "}
+                                  <span className="font-mono text-primary font-semibold">{p.receiptNumber}</span>
                                 </div>
                               </div>
-
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="h-8 text-xs gap-1.5 self-start sm:self-auto"
+                                className="h-8 text-xs gap-1 text-primary"
                                 onClick={() =>
                                   setActiveReceipt({
                                     ...p,
@@ -540,13 +597,13 @@ export const StudentFeeStatusDialog = ({
                         </div>
                       </div>
                     ) : (
-                      <div className="p-4 rounded-lg bg-muted/40 border border-dashed flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div className="text-sm text-muted-foreground">
+                      <div className="text-center py-4 bg-muted/20 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-3">
                           No annual fee payment recorded for session {selectedSession}.
-                        </div>
+                        </p>
                         <Button
                           size="sm"
-                          className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5"
+                          className="h-10 text-xs font-bold gap-1.5 bg-primary text-primary-foreground"
                           onClick={handleRecordAnnual}
                         >
                           <PlusCircle className="h-4 w-4" /> Record Annual Fee
@@ -568,7 +625,8 @@ export const StudentFeeStatusDialog = ({
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="p-0">
-                      <div className="overflow-x-auto">
+                      {/* Desktop Table View */}
+                      <div className="hidden sm:block overflow-x-auto">
                         <Table>
                           <TableHeader>
                             <TableRow className="bg-muted/40">
@@ -627,11 +685,85 @@ export const StudentFeeStatusDialog = ({
                           </TableBody>
                         </Table>
                       </div>
+
+                      {/* Mobile Card List for Other Payments */}
+                      <div className="sm:hidden divide-y divide-slate-100 p-2.5">
+                        {feeStatus.otherPayments.map((p) => (
+                          <div key={p.id} className="p-3 rounded-lg border bg-card my-1.5 space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <Badge variant="outline" className="capitalize text-[10px] font-bold">
+                                  {p.feeType.replace("_", " ")}
+                                </Badge>
+                                <div className="text-xs font-medium text-slate-800 mt-1">
+                                  {p.feeType === "uniform"
+                                    ? `${p.uniformType || "Uniform"} (Size ${p.uniformSize || "N/A"})`
+                                    : p.description || p.remarks || "—"}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-extrabold text-sm text-slate-900">
+                                  {formatINR(p.amount)}
+                                </div>
+                                <div className="text-[10px] text-muted-foreground font-mono">
+                                  {formatDateDDMMYYYY(p.paymentDate)}
+                                </div>
+                              </div>
+                            </div>
+
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full h-9 text-xs font-semibold gap-1 text-primary border-primary/30"
+                              onClick={() =>
+                                setActiveReceipt({
+                                  ...p,
+                                  student: {
+                                    id: student.id,
+                                    _id: student.id,
+                                    studentName: student.studentName,
+                                    admissionNumber: student.admissionNumber,
+                                    fatherName: student.fatherName,
+                                    class: student.class,
+                                    contactNumber: student.contactNumber,
+                                  },
+                                })
+                              }
+                            >
+                              <Receipt className="h-3.5 w-3.5" />
+                              View Receipt #{p.receiptNumber}
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
                     </CardContent>
                   </Card>
                 )}
               </>
             )}
+          </div>
+
+          {/* Sticky Bottom Action Bar with Safe Area */}
+          <div className="border-t bg-card px-4 py-3 flex items-center justify-between gap-3 sticky bottom-0 z-20 shadow-md pb-safe">
+            <div>
+              <span className="text-[10px] uppercase font-bold text-muted-foreground block">
+                Session Total Paid
+              </span>
+              <span className="font-black text-base text-green-700">
+                {formatINR(totalPaidInSession)}
+              </span>
+            </div>
+
+            <Button
+              onClick={() => {
+                setPrefillData({ feeType: "monthly", month: "", amount: student?.monthlyFee || 1250 });
+                setRecordPaymentOpen(true);
+              }}
+              className="h-10 px-4 text-xs font-bold gap-1.5 bg-primary text-primary-foreground shadow-xs"
+            >
+              <PlusCircle className="h-4 w-4" />
+              Collect Fee
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
