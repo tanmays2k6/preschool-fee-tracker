@@ -12,9 +12,15 @@ import feeRoutes from './routes/fee.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
 import settingsRoutes from './routes/settings.routes.js';
 import reportRoutes from './routes/report.routes.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { notFound, errorHandler } from './middleware/error.middleware.js';
 import supabase from './config/supabase.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 dotenv.config();
 
 const app = express();

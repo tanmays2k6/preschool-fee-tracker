@@ -2,6 +2,12 @@ import supabase from '../config/supabase.js';
 
 export const userService = {
   async findByEmail(email) {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error(
+        'Supabase configuration missing. Please add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in Vercel Environment Variables.'
+      );
+    }
+
     const { data, error } = await supabase
       .from('users')
       .select('*')
